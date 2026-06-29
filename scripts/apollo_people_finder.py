@@ -10,13 +10,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parents[1]
-INPUT_FILE = BASE_DIR / "data" / "output" / "matched_companies.csv"
+INPUT_FILE = BASE_DIR / "data" / "output" / "qualified_companies.csv"
 OUTPUT_FILE = BASE_DIR / "data" / "output" / "company_people_export.csv"
 
 APOLLO_API_KEY = os.getenv("APOLLO_API_KEY")
 APOLLO_PEOPLE_SEARCH_URL = "https://api.apollo.io/api/v1/mixed_people/api_search"
 
-MAX_COMPANIES = 50
+MAX_COMPANIES = 100
 MAX_CONTACTS_PER_COMPANY = 5
 
 TITLE_GROUPS = {
@@ -38,9 +38,7 @@ def clean_domain(website: str) -> str:
         website = "https://" + website
 
     parsed = urlparse(website)
-    domain = parsed.netloc.replace("www.", "").strip()
-
-    return domain
+    return parsed.netloc.replace("www.", "").replace("https", "").strip()
 
 
 def flatten_titles() -> list[str]:
@@ -87,8 +85,7 @@ def search_people(company_name: str, domain: str) -> list[dict]:
         print(f"Error for {company_name}: {response.status_code} - {response.text}")
         return []
 
-    data = response.json()
-    return data.get("people", [])
+    return response.json().get("people", [])
 
 
 def select_top_contacts(people: list[dict]) -> list[dict]:
@@ -96,8 +93,7 @@ def select_top_contacts(people: list[dict]) -> list[dict]:
     used_groups = set()
 
     for person in people:
-        title = person.get("title", "")
-        persona_group = classify_persona(title)
+        persona_group = classify_persona(person.get("title", ""))
 
         if persona_group != "Other" and persona_group not in used_groups:
             person["persona_group"] = persona_group
@@ -123,18 +119,23 @@ def main():
         raise ValueError("APOLLO_API_KEY not found. Check your .env file.")
 
     companies_df = pd.read_csv(INPUT_FILE)
-    new_companies = companies_df[companies_df["Couno Status"] == "New"].copy()
 
-    new_companies["Domain"] = new_companies["Website"].apply(clean_domain)
-    new_companies = new_companies[new_companies["Domain"] != ""]
+    qualified_companies = companies_df[
+        (companies_df["Qualification Status"] == "Target")
+        & (companies_df["Couno Status"] == "New")
+    ].copy()
 
-    test_companies = new_companies.head(MAX_COMPANIES)
+    qualified_companies["Domain"] = qualified_companies["Website"].apply(clean_domain)
+    qualified_companies = qualified_companies[qualified_companies["Domain"] != ""]
+
+    companies_to_process = qualified_companies.head(MAX_COMPANIES)
 
     rows = []
 
-    print(f"Searching Apollo for {len(test_companies)} companies...")
+    print(f"Qualified target companies available: {len(qualified_companies)}")
+    print(f"Searching Apollo for {len(companies_to_process)} companies...")
 
-    for _, company in test_companies.iterrows():
+    for _, company in companies_to_process.iterrows():
         company_name = company["Company Name"]
         domain = company["Domain"]
 
@@ -150,6 +151,10 @@ def main():
                 "Domain": domain,
                 "Employees": company.get("# Employees", ""),
                 "Company City": company.get("Company City", ""),
+                "Legal Segment": company.get("Legal Segment", ""),
+                "ICP Score": company.get("ICP Score", ""),
+                "Qualification Status": company.get("Qualification Status", ""),
+                "Qualification Reason": company.get("Qualification Reason", ""),
                 "First Name": person.get("first_name", ""),
                 "Last Name": person.get("last_name", ""),
                 "Full Name": person.get("name", ""),
@@ -167,6 +172,7 @@ def main():
     output_df = pd.DataFrame(rows)
     output_df.to_csv(OUTPUT_FILE, index=False)
 
+    print()
     print("Finished.")
     print(f"Contacts found: {len(output_df)}")
     print(f"Output created: {OUTPUT_FILE}")

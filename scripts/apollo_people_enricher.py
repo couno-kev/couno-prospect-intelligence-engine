@@ -16,7 +16,7 @@ OUTPUT_FILE = BASE_DIR / "data" / "output" / "company_people_enriched.csv"
 df = pd.read_csv(INPUT_FILE)
 
 # Test mode: only enrich first 50 contacts
-df = df.head(50)
+df = df.head(100)
 
 results = []
 
