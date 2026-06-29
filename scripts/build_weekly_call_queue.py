@@ -4,20 +4,44 @@ import math
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 
-INPUT_FILE = BASE_DIR / "data" / "output" / "validated_prospects.csv"
-OUTPUT_FILE = BASE_DIR / "data" / "output" / "weekly_call_queue.csv"
+INPUT_FILE = (
+    BASE_DIR
+    / "data"
+    / "output"
+    / "linkedin_validated_prospects.csv"
+)
+
+OUTPUT_FILE = (
+    BASE_DIR
+    / "data"
+    / "output"
+    / "weekly_call_queue.csv"
+)
 
 COMPANIES_PER_WEEK = 75
 
 df = pd.read_csv(INPUT_FILE)
 
-print(f"Validated prospect records loaded: {len(df)}")
+print(f"LinkedIn validated prospect records loaded: {len(df)}")
 
-df = df[df["Employment Validation Status"] == "Likely Current"]
-df = df[df["Company Name"].notna()]
-df = df[df["Company Name"] != ""]
+# Only use the highest quality prospects
+df = df[
+    df["Employment Validation Status"] == "Likely Current"
+]
 
-print(f"Likely current records used: {len(df)}")
+df = df[
+    df["LinkedIn Validation Status"] == "High Confidence"
+]
+
+df = df[
+    df["Company Name"].notna()
+]
+
+df = df[
+    df["Company Name"] != ""
+]
+
+print(f"High confidence records used: {len(df)}")
 
 companies = (
     df.groupby("Company Name")
@@ -26,12 +50,23 @@ companies = (
         "Domain": "first",
         "Employees": "first",
         "Company City": "first",
-        "Full Name": lambda x: " | ".join(x.dropna().astype(str).head(5)),
-        "Job Title": lambda x: " | ".join(x.dropna().astype(str).head(5)),
-        "Email": lambda x: " | ".join(x.dropna().astype(str).head(5)),
-        "Persona Group": lambda x: " | ".join(x.dropna().astype(str).head(5)),
-        "LinkedIn URL": lambda x: " | ".join(x.dropna().astype(str).head(5)),
+        "Full Name": lambda x: " | ".join(
+            x.dropna().astype(str).head(5)
+        ),
+        "Job Title": lambda x: " | ".join(
+            x.dropna().astype(str).head(5)
+        ),
+        "Email": lambda x: " | ".join(
+            x.dropna().astype(str).head(5)
+        ),
+        "Persona Group": lambda x: " | ".join(
+            x.dropna().astype(str).head(5)
+        ),
+        "LinkedIn URL": lambda x: " | ".join(
+            x.dropna().astype(str).head(5)
+        ),
         "Contact Quality Score": "max",
+        "LinkedIn Validation Score": "max",
     })
     .reset_index()
 )
@@ -43,6 +78,7 @@ companies = companies.rename(columns={
     "Persona Group": "Persona Groups",
     "LinkedIn URL": "Top Contact LinkedIn URLs",
     "Contact Quality Score": "Best Contact Quality Score",
+    "LinkedIn Validation Score": "Best LinkedIn Validation Score",
 })
 
 companies["Week Number"] = companies.index.map(

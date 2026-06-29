@@ -3,12 +3,12 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 
-INPUT_FILE = BASE_DIR / "data" / "output" / "validated_prospects.csv"
+INPUT_FILE = BASE_DIR / "data" / "output" / "linkedin_validated_prospects.csv"
 OUTPUT_FILE = BASE_DIR / "data" / "output" / "marketing_campaign.csv"
 
 df = pd.read_csv(INPUT_FILE)
 
-print(f"Validated prospects loaded: {len(df)}")
+print(f"LinkedIn validated prospects loaded: {len(df)}")
 
 required_columns = [
     "Do Not Contact",
@@ -27,6 +27,10 @@ campaign_df = df.copy()
 
 campaign_df = campaign_df[
     campaign_df["Employment Validation Status"] == "Likely Current"
+]
+
+campaign_df = campaign_df[
+    campaign_df["LinkedIn Validation Status"] == "High Confidence"
 ]
 
 campaign_df = campaign_df[
