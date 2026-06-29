@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.DS_Store
+
+# Data outputs
+data/*.csv
+data/*.xlsx
+output/*.csv
+output/*.xlsx
+!data/.gitkeep
+!output/.gitkeep
