@@ -1,4 +1,4 @@
-# Python
+# Pythonbackups
 __pycache__/
 *.py[cod]
 .venv/
@@ -12,4 +12,17 @@ output/*.csv
 output/*.xlsx
 !data/.gitkeep
 !output/.gitkeep
+# Generated data
+data/output/*.csv
+data/cache/*.csv
 data/database/*.csv
+output_backup/
+
+# Local backups
+backup-before-enhancements/
+# Generated prospect data
+data/output/*.csv
+data/cache/*.csv
+data/database/*.csv
+data/output_backup/
+backup-before-enhancements/
