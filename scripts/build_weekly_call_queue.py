@@ -8,6 +8,13 @@ INPUT_FILE = (
     BASE_DIR
     / "data"
     / "output"
+    / "couno_scored_prospects.csv"
+)
+
+FALLBACK_INPUT_FILE = (
+    BASE_DIR
+    / "data"
+    / "output"
     / "linkedin_validated_prospects.csv"
 )
 
@@ -20,9 +27,10 @@ OUTPUT_FILE = (
 
 COMPANIES_PER_WEEK = 75
 
-df = pd.read_csv(INPUT_FILE)
+input_file = INPUT_FILE if INPUT_FILE.exists() else FALLBACK_INPUT_FILE
+df = pd.read_csv(input_file)
 
-print(f"LinkedIn validated prospect records loaded: {len(df)}")
+print(f"Prospect records loaded: {len(df)}")
 
 # Only use the highest quality prospects
 df = df[
@@ -67,6 +75,7 @@ companies = (
         ),
         "Contact Quality Score": "max",
         "LinkedIn Validation Score": "max",
+        **({"Couno Fit Score": "max"} if "Couno Fit Score" in df.columns else {}),
     })
     .reset_index()
 )
@@ -79,7 +88,12 @@ companies = companies.rename(columns={
     "LinkedIn URL": "Top Contact LinkedIn URLs",
     "Contact Quality Score": "Best Contact Quality Score",
     "LinkedIn Validation Score": "Best LinkedIn Validation Score",
+    "Couno Fit Score": "Best Couno Fit Score",
 })
+
+sort_columns = [col for col in ["Best Couno Fit Score", "Best LinkedIn Validation Score", "Best Contact Quality Score"] if col in companies.columns]
+if sort_columns:
+    companies = companies.sort_values(by=sort_columns, ascending=[False] * len(sort_columns)).reset_index(drop=True)
 
 companies["Week Number"] = companies.index.map(
     lambda i: math.floor(i / COMPANIES_PER_WEEK) + 1

@@ -46,7 +46,6 @@ output_columns = [
 ]
 
 output_df = apollo_df[output_columns]
-
 output_df.to_csv(OUTPUT_FILE, index=False)
 
 print("Finished successfully.")
