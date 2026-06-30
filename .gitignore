@@ -26,3 +26,6 @@ data/cache/*.csv
 data/database/*.csv
 data/output_backup/
 backup-before-enhancements/
+config/google_credentials.json
+config/google_credentials.json
+config/google_credentials.json.json
